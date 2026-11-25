@@ -2,6 +2,8 @@
 
 Lightweight native Windows RGB controller powered by **SignalRGB's JavaScript device plugins** (`.NET 10` + `Microsoft.ClearScript.V8`), **PawnIO SMBus**, **AMD ADL I2C**, **NVIDIA NVAPI I2C**, and universal **USB HID LampArray** (`UsagePage 0x59`) — with **zero Chromium / Ultralight bloat**.
 
+![LightRGB Control Panel](docs/screenshots/dashboard.png)
+
 ## Quick Start (Portable Release)
 1. Extract `LightRGB-Portable-win-x64.zip` to a permanent folder (for example `C:\Tools\LightRGB`). *(No `.NET 10` installation required.)*
 2. Double-click **`LightRGB.exe`**.
@@ -24,6 +26,9 @@ Lightweight native Windows RGB controller powered by **SignalRGB's JavaScript de
 * **Tray Mode (default):** Keeps a tiny tray icon near the clock (~0% CPU when devices are set to `Static`). Double-click the tray icon (or `LightRGB.exe`) to open the Control Panel; right-click → **Exit** to close completely.
 * **Apply & Exit Mode (`0% RAM / 0% CPU`):** Check **Apply & exit on startup (0% RAM/CPU)** and **Keep lights on when exiting** in Engine Settings. At Windows logon, LightRGB silently applies your static colors across all devices and exits automatically.
 * **Per-Device Brightness & Sync:** Every device card lets you choose **Animated / Static / Off**, individual **Brightness (`0–100%`)**, and **Sync** (or **Sync all** globally).
+
+### Per-Device Controls & GPU Calibration
+![GPU Calibration and Per-Device Controls](docs/screenshots/device-controls.png)
 
 ## Portable Mode & CLI Options
 Place an empty `portable.txt` file next to `LightRGB.exe` to store `data\` (config & extracted plugins) inside the app folder instead of `%LOCALAPPDATA%\LightRGB`.
