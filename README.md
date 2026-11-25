@@ -1,6 +1,6 @@
 # LightRGB
 
-Lightweight native Windows RGB controller powered by **SignalRGB's JavaScript device plugins** (`.NET 10` + `Microsoft.ClearScript.V8`), **PawnIO SMBus**, **AMD ADL I2C**, **NVIDIA NVAPI I2C**, and universal **USB HID LampArray** (`UsagePage 0x59`) — with **zero Chromium / Ultralight bloat**.
+Lightweight native Windows RGB controller compatible with the **SignalRGB JavaScript plugin format** (`.NET 10` + `Microsoft.ClearScript.V8`), **PawnIO SMBus**, **AMD ADL I2C**, **NVIDIA NVAPI I2C**, and universal **USB HID LampArray** (`UsagePage 0x59`) — with **zero Chromium / Ultralight bloat**.
 
 ![LightRGB Control Panel](docs/screenshots/dashboard.png)
 
@@ -54,6 +54,11 @@ dotnet test LightRGB.sln -c Release -p:Platform=x64 --no-build
 # Build clean self-contained portable folder & ZIP (fetches official signed PawnIO_setup.exe automatically)
 .\scripts\build-portable.ps1
 ```
+
+## Credits & Acknowledgments
+* **[SignalRGB](https://signalrgb.com) (WhirlwindFX):** Huge credit to the SignalRGB team and community for designing the JavaScript device plugin specification and building a massive hardware plugin ecosystem. If you want advanced effects, game integrations, cooling control, and official support, check out SignalRGB directly.
+* **[PawnIO](https://pawnio.eu) (`namazso`):** For the signed PawnIO driver and SMBus modules (`SmbusPIIX4.bin`, `SmbusI801.bin`) that make safe RGB RAM control possible on modern Windows.
+* **Open-Source RGB Community:** For hardware protocol documentation (AMD ADL Nitro Glow V3, MonsGeek HID, and community-authored plugins).
 
 ## Disclaimer & License
 * **Hardware Risk Notice:** LightRGB writes directly to USB HID, SMBus, and GPU I2C interfaces. Although strict safety guards block known critical addresses (such as SPD EEPROMs `0x50–0x57` and Sapphire `0x3E`), this software is provided **AS-IS** with **no warranty** — use at your own risk.
