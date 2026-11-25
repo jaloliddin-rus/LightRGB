@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LightRGB Control Panel</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --panel: #121722;
+      --panel-2: #181f2e;
+      --border: #252f45;
+      --text: #e6edf7;
+      --muted: #8b98b1;
+      --accent: #00b4ff;
+      --accent-2: #ff3e8a;
+      --ok: #2de08b;
+      --warn: #f5b942;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at top right, #161d2f 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 24px;
+      background: rgba(18, 23, 34, 0.92);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: conic-gradient(from 90deg, #ff3e8a, #00b4ff, #2de08b, #ff3e8a);
+      box-shadow: 0 0 18px rgba(0, 180, 255, 0.35);
+    }
+    .brand h1 { margin: 0; font-size: 18px; letter-spacing: 0.3px; }
+    .brand small { color: var(--muted); display: block; font-size: 12px; }
+    .pills { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .pill {
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text);
+    }
+    .pill strong { color: var(--accent); }
+    button {
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 7px 13px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+    }
+    button:hover:not(:disabled) { border-color: var(--accent); }
+    button:disabled { opacity: 0.6; cursor: wait; }
+    button.active { background: rgba(0, 180, 255, 0.18); border-color: var(--accent); color: var(--accent); }
+    .scan-banner {
+      max-width: 1400px;
+      margin: 14px auto 0;
+      padding: 0 24px;
+      display: none;
+    }
+    .scan-banner.visible { display: block; }
+    .scan-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+    }
+    .scan-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .scan-track {
+      width: 100%;
+      height: 8px;
+      background: var(--bg);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .scan-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-2), var(--accent), var(--ok));
+      transition: width 0.2s ease-out;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      padding: 20px 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .preview-wrap {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+      background: #000;
+    }
+    canvas#preview { width: 100%; height: 140px; display: block; image-rendering: auto; }
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    select, input[type="number"], input[type="text"] {
+      width: 100%;
+      background: var(--panel-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 13px;
+    }
+    input[type="range"] { width: 100%; accent-color: var(--accent); }
+    input[type="color"] {
+      width: 44px; height: 32px;
+      padding: 0; border: 1px solid var(--border);
+      border-radius: 6px; background: transparent; cursor: pointer;
+    }
+    .row { display: flex; gap: 10px; align-items: center; }
+    .seg {
+      display: inline-flex;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .seg button {
+      border: none;
+      background: transparent;
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: 6px;
+      color: var(--muted);
+    }
+    .seg button.active {
+      background: var(--accent);
+      color: #05101c;
+      font-weight: 600;
+    }
+    .device-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+    }
+    .dev-meta { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      margin-right: 6px;
+    }
+    .badge.idle { color: var(--ok); border-color: rgba(45, 224, 139, 0.35); }
+    .badge.err { color: #ff6b6b; border-color: rgba(255, 107, 107, 0.4); }
+    details {
+      margin-top: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+    }
+    summary {
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--muted);
+      user-select: none;
+    }
+    .logs {
+      background: #080b10;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px;
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11px;
+      color: #a9b7d0;
+      max-height: 120px;
+      overflow-y: auto;
+      margin-top: 8px;
+      white-space: pre-wrap;
+    }
+    .muted { color: var(--muted); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo"></div>
+      <div>
+        <h1>LightRGB</h1>
+        <small>Native SignalRGB Plugin Runner &bull; Zero Browser Engine Bloat</small>
+      </div>
+    </div>
+    <div class="pills">
+      <span class="pill">RAM: <strong id="ramMb">--</strong> MB</span>
+      <span class="pill">CPU: <strong id="cpuPct">--</strong>%</span>
+      <span class="pill">Plugins: <strong id="pluginCount">--</strong></span>
+      <button id="btnPause">Pause</button>
+      <button id="btnRescan">Rescan</button>
+      <button id="btnStartup">Startup: Off</button>
+    </div>
+  </header>
+
+  <div id="scanBanner" class="scan-banner">
+    <div class="scan-box">
+      <div class="scan-top">
+        <span id="scanStage">Scanning devices...</span>
+        <span><strong id="scanPct">0%</strong> &bull; <span id="scanFound" class="muted">0 found</span></span>
+      </div>
+      <div class="scan-track">
+        <div id="scanFill" class="scan-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <section>
+      <div class="card">
+        <h2>Effect Canvas</h2>
+        <div class="preview-wrap">
+          <canvas id="preview" width="16" height="10"></canvas>
+        </div>
+        <div class="field">
+          <label><span>Effect</span></label>
+          <select id="effectName"></select>
+        </div>
+        <div class="field">
+          <label>
+            <span>Brightness</span>
+            <span class="row" style="gap:8px;">
+              <label style="margin:0; gap:4px; align-items:center; font-size:11px; color:var(--muted); cursor:pointer;">
+                <input id="syncAllBright" type="checkbox" checked style="width:auto;" />
+                Sync all
+              </label>
+              <span id="lblBright">100%</span>
+            </span>
+          </label>
+          <input id="brightness" type="range" min="0" max="100" value="100" />
+        </div>
+        <div class="field">
+          <label><span>Speed</span><span id="lblSpeed">1.0x</span></label>
+          <input id="speed" type="range" min="0.1" max="5.0" step="0.1" value="1.0" />
+        </div>
+        <div class="field">
+          <label><span>Direction</span></label>
+          <select id="direction">
+            <option value="right">Right</option>
+            <option value="left">Left</option>
+            <option value="up">Up</option>
+            <option value="down">Down</option>
+            <option value="radial">Radial</option>
+          </select>
+        </div>
+        <div class="field row">
+          <div style="flex:1">
+            <label><span>Primary</span></label>
+            <input id="primaryColor" type="color" value="#009BDE" />
+          </div>
+          <div style="flex:1">
+            <label><span>Secondary</span></label>
+            <input id="secondaryColor" type="color" value="#FF2A85" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Engine Settings</h2>
+        <div class="field">
+          <label><span>Target FPS (Animated devices)</span><span id="lblFps">20</span></label>
+          <input id="targetFps" type="range" min="1" max="60" value="20" />
+        </div>
+        <div class="field row" style="justify-content: space-between;">
+          <span class="muted">Keep lights on when exiting</span>
+          <input id="skipShutdown" type="checkbox" />
+        </div>
+        <div class="field row" style="justify-content: space-between;">
+          <span class="muted">Apply &amp; exit on startup (0% RAM/CPU)</span>
+          <input id="startupApplyExit" type="checkbox" />
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>System &amp; SMBus Diagnostics</h2>
+        <div id="sysInfo" class="muted">Loading...</div>
+      </div>
+    </section>
+
+    <section>
+      <div class="card" style="margin-bottom: 16px;">
+        <h2>Connected RGB Devices <span id="devCount" class="muted">0 active</span></h2>
+        <div id="devices" class="device-grid"></div>
+      </div>
+
+      <div class="card">
+        <h2>Other Detected HID Devices <span class="muted">(Unmatched)</span></h2>
+        <div id="unmatched" class="muted">None</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const els = {
+      ramMb: document.getElementById("ramMb"),
+      cpuPct: document.getElementById("cpuPct"),
+      pluginCount: document.getElementById("pluginCount"),
+      btnPause: document.getElementById("btnPause"),
+      btnRescan: document.getElementById("btnRescan"),
+      btnStartup: document.getElementById("btnStartup"),
+      scanBanner: document.getElementById("scanBanner"),
+      scanStage: document.getElementById("scanStage"),
+      scanPct: document.getElementById("scanPct"),
+      scanFound: document.getElementById("scanFound"),
+      scanFill: document.getElementById("scanFill"),
+      effectName: document.getElementById("effectName"),
+      brightness: document.getElementById("brightness"),
+      lblBright: document.getElementById("lblBright"),
+      syncAllBright: document.getElementById("syncAllBright"),
+      speed: document.getElementById("speed"),
+      lblSpeed: document.getElementById("lblSpeed"),
+      direction: document.getElementById("direction"),
+      primaryColor: document.getElementById("primaryColor"),
+      secondaryColor: document.getElementById("secondaryColor"),
+      targetFps: document.getElementById("targetFps"),
+      lblFps: document.getElementById("lblFps"),
+      skipShutdown: document.getElementById("skipShutdown"),
+      startupApplyExit: document.getElementById("startupApplyExit"),
+      sysInfo: document.getElementById("sysInfo"),
+      devices: document.getElementById("devices"),
+      devCount: document.getElementById("devCount"),
+      unmatched: document.getElementById("unmatched"),
+      preview: document.getElementById("preview")
+    };
+
+    let lastStatus = null;
+    let lastDeviceSig = "__unset__";
+    let statusInFlight = false;
+    let canvasInFlight = false;
+    let statusPollTimer = null;
+    let wasScanning = false;
+    let hideBannerTimer = null;
+
+    function throttle(fn, ms) {
+      let last = 0;
+      let timer = null;
+      let latestArgs = null;
+      return (...args) => {
+        latestArgs = args;
+        const now = performance.now();
+        const rem = ms - (now - last);
+        if (rem <= 0) {
+          clearTimeout(timer);
+          timer = null;
+          last = now;
+          fn(...latestArgs);
+        } else if (!timer) {
+          timer = setTimeout(() => {
+            timer = null;
+            last = performance.now();
+            fn(...latestArgs);
+          }, rem);
+        }
+      };
+    }
+
+    async function api(path, method = "GET", body = null) {
+      const res = await fetch(path, {
+        method,
+        headers: body ? { "Content-Type": "application/json" } : {},
+        body: body ? JSON.stringify(body) : null
+      });
+      return res.json();
+    }
+
+    const pushEffect = throttle(() => {
+      api("/api/effect", "POST", {
+        effectName: els.effectName.value,
+        brightness: Number(els.brightness.value),
+        speed: Number(els.speed.value),
+        direction: els.direction.value,
+        primaryColor: els.primaryColor.value,
+        secondaryColor: els.secondaryColor.value
+      }).catch(() => {});
+    }, 60);
+
+    const pushSettings = throttle((extra = {}) => {
+      api("/api/settings", "POST", {
+        targetFps: Number(els.targetFps.value),
+        skipShutdownBlackout: els.skipShutdown.checked,
+        startupApplyAndExit: els.startupApplyExit.checked,
+        ...extra
+      }).catch(() => {});
+    }, 60);
+
+    els.effectName.onchange = pushEffect;
+    els.direction.onchange = pushEffect;
+    els.primaryColor.oninput = pushEffect;
+    els.secondaryColor.oninput = pushEffect;
+    els.brightness.oninput = () => { els.lblBright.textContent = els.brightness.value + "%"; pushEffect(); };
+    els.syncAllBright.onchange = () => {
+      api("/api/settings", "POST", { syncAllBrightness: els.syncAllBright.checked }).then(refreshStatus).catch(() => {});
+    };
+    els.speed.oninput = () => { els.lblSpeed.textContent = Number(els.speed.value).toFixed(1) + "x"; pushEffect(); };
+    els.targetFps.oninput = () => { els.lblFps.textContent = els.targetFps.value; pushSettings(); };
+    els.skipShutdown.onchange = () => pushSettings();
+    els.startupApplyExit.onchange = () => pushSettings();
+
+    els.btnPause.onclick = () => api("/api/settings", "POST", {
+      targetFps: Number(els.targetFps.value),
+      skipShutdownBlackout: els.skipShutdown.checked,
+      paused: !(lastStatus && lastStatus.paused)
+    }).then(refreshStatus);
+
+    els.btnRescan.onclick = () => {
+      els.btnRescan.disabled = true;
+      els.btnRescan.textContent = "Scanning...";
+      showScanBanner({ isScanning: true, percent: 5, stage: "Starting hardware scan...", foundCount: (lastStatus?.devices?.length || 0) });
+      api("/api/rescan", "POST", {}).then(() => {
+        scheduleNextStatusPoll(150);
+      });
+    };
+
+    els.btnStartup.onclick = () => api("/api/startup", "POST", {
+      enabled: !(lastStatus && lastStatus.startupEnabled)
+    }).then(refreshStatus);
+
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function showScanBanner(scan) {
+      if (!scan) return;
+      if (scan.isScanning) {
+        clearTimeout(hideBannerTimer);
+        wasScanning = true;
+        els.scanBanner.classList.add("visible");
+        els.scanStage.textContent = scan.stage || "Scanning devices...";
+        els.scanPct.textContent = `${scan.percent || 0}%`;
+        els.scanFound.textContent = `${scan.foundCount || 0} found`;
+        els.scanFill.style.width = `${Math.max(4, scan.percent || 0)}%`;
+        els.btnRescan.disabled = true;
+        els.btnRescan.textContent = "Scanning...";
+      } else {
+        els.btnRescan.disabled = false;
+        els.btnRescan.textContent = "Rescan";
+        if (wasScanning) {
+          wasScanning = false;
+          els.scanStage.textContent = scan.stage || "Scan complete";
+          els.scanPct.textContent = "100%";
+          els.scanFound.textContent = `${scan.foundCount || 0} found`;
+          els.scanFill.style.width = "100%";
+          clearTimeout(hideBannerTimer);
+          hideBannerTimer = setTimeout(() => {
+            els.scanBanner.classList.remove("visible");
+          }, 1500);
+        }
+      }
+    }
+
+    function computeDeviceSig(devices) {
+      return (devices || []).map(d =>
+        d.deviceId + "|" +
+        (d.channels || []).map(c => c.name).join(",") + "|" +
+        (d.parameters || []).map(p => `${p.property}:${p.type}`).join(",")
+      ).join(";");
+    }
+
+    function buildDevicesDom(devices) {
+      if (devices.length === 0) {
+        els.devices.innerHTML = `<div class="muted">No supported RGB devices detected yet. Connect a device and click Rescan.</div>`;
+        return;
+      }
+
+      els.devices.innerHTML = devices.map(d => {
+        const modes = ["Animated", "Static", "Off"].map(m =>
+          `<button class="${d.mode === m ? "active" : ""}" data-dev="${escapeHtml(d.deviceId)}" data-mode="${m}">${m}</button>`
+        ).join("");
+
+        const channelsHtml = (d.channels || []).map(ch => `
+          <div class="field row" style="justify-content:space-between; margin-top:8px;">
+            <span class="muted">${escapeHtml(ch.name)} (max ${ch.maxLeds})</span>
+            <input type="number" min="0" max="${ch.maxLeds || 512}" value="${ch.ledCount}" style="width:76px"
+                   data-dev="${escapeHtml(d.deviceId)}" data-ch="${escapeHtml(ch.name)}" class="ch-input" />
+          </div>
+        `).join("");
+
+        const paramsHtml = (d.parameters || []).map(p => {
+          const val = p.currentValue ?? p.default ?? "";
+          if (p.type === "combobox" && p.values && p.values.length) {
+            const opts = p.values.map(v => `<option value="${escapeHtml(v)}" ${String(val) === String(v) ? "selected" : ""}>${escapeHtml(v)}</option>`).join("");
+            return `<div class="field"><label><span>${escapeHtml(p.label)}</span></label><select class="param-input" data-dev="${escapeHtml(d.deviceId)}" data-prop="${escapeHtml(p.property)}" data-type="${escapeHtml(p.type)}">${opts}</select></div>`;
+          }
+          if (p.type === "boolean") {
+            const chk = val === true || String(val).toLowerCase() === "true";
+            return `<div class="field row" style="justify-content:space-between;"><span class="muted">${escapeHtml(p.label)}</span><input type="checkbox" ${chk ? "checked" : ""} class="param-input" data-dev="${escapeHtml(d.deviceId)}" data-prop="${escapeHtml(p.property)}" data-type="boolean" /></div>`;
+          }
+          if (p.type === "color") {
+            return `<div class="field row" style="justify-content:space-between;"><span class="muted">${escapeHtml(p.label)}</span><input type="color" value="${escapeHtml(String(val || "#009BDE"))}" class="param-input" data-dev="${escapeHtml(d.deviceId)}" data-prop="${escapeHtml(p.property)}" data-type="color" /></div>`;
+          }
+          if (p.type === "number" && p.min !== null && p.max !== null) {
+            const numVal = Number(val);
+            const step = p.step || 1;
+            const fmt = step < 1 ? numVal.toFixed(1) : String(numVal);
+            return `<div class="field"><label><span>${escapeHtml(p.label)}</span><span class="param-val-lbl">${escapeHtml(fmt)}</span></label><input type="range" min="${p.min}" max="${p.max}" step="${step}" value="${escapeHtml(numVal)}" class="param-input" data-dev="${escapeHtml(d.deviceId)}" data-prop="${escapeHtml(p.property)}" data-type="number" /></div>`;
+          }
+          return `<div class="field"><label><span>${escapeHtml(p.label)}</span></label><input type="text" value="${escapeHtml(val)}" class="param-input" data-dev="${escapeHtml(d.deviceId)}" data-prop="${escapeHtml(p.property)}" data-type="${escapeHtml(p.type)}" /></div>`;
+        }).join("");
+
+        const gpuCalibHtml = d.deviceType === "gpu"
+          ? `<div class="row" style="gap:6px; flex-wrap:wrap; margin-bottom:10px;">
+               <span class="muted" style="font-size:11px;">Calibrate:</span>
+               ${[["Red","#FF0000"],["Green","#00FF00"],["Blue","#0000FF"],["Sky","#009BFF"],["White","#FFFFFF"]]
+                 .map(([lbl, hex]) => `<button type="button" class="gpu-swatch" data-dev="${escapeHtml(d.deviceId)}" data-color="${hex}" style="padding:3px 8px; font-size:11px; border-left:6px solid ${hex};">${lbl}</button>`)
+                 .join("")}
+             </div>`
+          : "";
+
+        const logsText = (d.logs || []).slice(-8).join("\n");
+
+        return `
+          <div class="card" data-dev-card="${escapeHtml(d.deviceId)}" style="margin:0; background: var(--panel-2);">
+            <h2 style="margin-bottom:6px;">
+              <span data-role="name">${escapeHtml(d.name)}</span>
+              <span data-role="idle" class="badge ${d.isIdle ? "idle" : ""}">${d.isIdle ? "0% CPU Idle" : "Streaming"}</span>
+            </h2>
+            <div class="dev-meta">
+              <span class="badge">${escapeHtml(d.vendorId)}:${escapeHtml(d.productId)}</span>
+              <span class="badge">${escapeHtml(d.deviceType || "rgb")}</span>
+              <span>Frames: <span data-role="frames">${d.framesRendered}</span></span>
+              <div data-role="err" class="badge err" style="margin-top:6px; ${d.lastError ? "" : "display:none;"}">${escapeHtml(d.lastError || "")}</div>
+              <div style="margin-top:4px; opacity:0.75">${escapeHtml(d.pluginPath)}</div>
+            </div>
+
+            <div class="row" style="justify-content:space-between; margin-bottom:10px;">
+              <div class="seg">${modes}</div>
+              <div class="row">
+                <span class="muted">Static</span>
+                <input type="color" value="${escapeHtml(d.staticColor)}" class="static-color" data-dev="${escapeHtml(d.deviceId)}" />
+              </div>
+            </div>
+
+            <div class="field" style="margin-bottom:10px;">
+              <label>
+                <span>Brightness</span>
+                <span class="row" style="gap:8px;">
+                  <label style="margin:0; gap:4px; align-items:center; font-size:11px; color:var(--muted); cursor:pointer;">
+                    <input type="checkbox" class="dev-sync-bright" data-dev="${escapeHtml(d.deviceId)}" ${d.syncBrightness !== false ? "checked" : ""} style="width:auto;" />
+                    Sync
+                  </label>
+                  <span class="dev-bright-lbl">${escapeHtml(d.effectiveBrightness ?? 100)}%</span>
+                </span>
+              </label>
+              <input type="range" min="0" max="100" value="${escapeHtml(d.effectiveBrightness ?? 100)}" class="dev-bright" data-dev="${escapeHtml(d.deviceId)}" />
+            </div>
+
+            ${gpuCalibHtml}
+            ${channelsHtml}
+
+            ${paramsHtml ? `<details><summary>Plugin Parameters (${d.parameters.length})</summary><div style="margin-top:8px;">${paramsHtml}</div></details>` : ""}
+            <details><summary>Device Logs</summary><div data-role="logs" class="logs">${escapeHtml(logsText || "No logs yet.")}</div></details>
+          </div>
+        `;
+      }).join("");
+
+      document.querySelectorAll(".seg button").forEach(btn => {
+        btn.onclick = () => api(`/api/devices/${encodeURIComponent(btn.dataset.dev)}`, "POST", { mode: btn.dataset.mode }).then(refreshStatus);
+      });
+      document.querySelectorAll(".dev-bright").forEach(inp => {
+        const send = throttle(val => api(`/api/devices/${encodeURIComponent(inp.dataset.dev)}`, "POST", {
+          brightness: Number(val),
+          syncBrightness: false
+        }).catch(() => {}), 60);
+        inp.oninput = () => {
+          const field = inp.closest(".field");
+          const lbl = field ? field.querySelector(".dev-bright-lbl") : null;
+          const chk = field ? field.querySelector(".dev-sync-bright") : null;
+          if (lbl) lbl.textContent = inp.value + "%";
+          if (chk) chk.checked = false;
+          send(inp.value);
+        };
+      });
+      document.querySelectorAll(".dev-sync-bright").forEach(chk => {
+        chk.onchange = () => {
+          const field = chk.closest(".field");
+          const inp = field ? field.querySelector(".dev-bright") : null;
+          const lbl = field ? field.querySelector(".dev-bright-lbl") : null;
+          if (chk.checked) {
+            const globalVal = els.brightness.value;
+            if (inp) inp.value = globalVal;
+            if (lbl) lbl.textContent = globalVal + "%";
+            api(`/api/devices/${encodeURIComponent(chk.dataset.dev)}`, "POST", { syncBrightness: true }).then(refreshStatus).catch(() => {});
+          } else {
+            const seed = Number(inp ? inp.value : els.brightness.value);
+            if (lbl) lbl.textContent = seed + "%";
+            api(`/api/devices/${encodeURIComponent(chk.dataset.dev)}`, "POST", { syncBrightness: false, brightness: seed }).then(refreshStatus).catch(() => {});
+          }
+        };
+      });
+      document.querySelectorAll(".gpu-swatch").forEach(btn => {
+        btn.onclick = () => {
+          const card = btn.closest("[data-dev-card]");
+          const inp = card ? card.querySelector(".static-color") : null;
+          if (inp) inp.value = btn.dataset.color;
+          api(`/api/devices/${encodeURIComponent(btn.dataset.dev)}`, "POST", { mode: "Static", staticColor: btn.dataset.color }).then(refreshStatus);
+        };
+      });
+      document.querySelectorAll(".static-color").forEach(inp => {
+        const send = throttle(val => api(`/api/devices/${encodeURIComponent(inp.dataset.dev)}`, "POST", { staticColor: val }).catch(() => {}), 60);
+        inp.oninput = () => send(inp.value);
+      });
+      document.querySelectorAll(".ch-input").forEach(inp => {
+        inp.onchange = () => api(`/api/devices/${encodeURIComponent(inp.dataset.dev)}`, "POST", {
+          channelLedCounts: { [inp.dataset.ch]: Number(inp.value) }
+        });
+      });
+      document.querySelectorAll(".param-input").forEach(inp => {
+        const sendParam = throttle(val => {
+          api(`/api/devices/${encodeURIComponent(inp.dataset.dev)}`, "POST", {
+            pluginParams: { [inp.dataset.prop]: val }
+          }).catch(() => {});
+        }, 60);
+
+        if (inp.type === "range" || inp.type === "color") {
+          inp.oninput = () => {
+            if (inp.type === "range") {
+              const lbl = inp.parentElement?.querySelector(".param-val-lbl");
+              const st = Number(inp.step || 1);
+              if (lbl) lbl.textContent = st < 1 ? Number(inp.value).toFixed(1) : inp.value;
+            }
+            const val = inp.dataset.type === "number" ? Number(inp.value) : inp.value;
+            sendParam(val);
+          };
+        } else {
+          inp.onchange = () => {
+            let val = inp.type === "checkbox" ? inp.checked : inp.value;
+            if (inp.dataset.type === "number") val = Number(val);
+            sendParam(val);
+          };
+        }
+      });
+    }
+
+    function patchDevicesDom(devices) {
+      for (const d of devices) {
+        const card = Array.from(els.devices.children).find(el => el.dataset.devCard === d.deviceId);
+        if (!card) continue;
+
+        const nameEl = card.querySelector('[data-role="name"]');
+        if (nameEl && nameEl.textContent !== d.name) nameEl.textContent = d.name;
+
+        const idleEl = card.querySelector('[data-role="idle"]');
+        if (idleEl) {
+          idleEl.className = `badge ${d.isIdle ? "idle" : ""}`;
+          idleEl.textContent = d.isIdle ? "0% CPU Idle" : "Streaming";
+        }
+
+        const framesEl = card.querySelector('[data-role="frames"]');
+        if (framesEl) framesEl.textContent = String(d.framesRendered);
+
+        const errEl = card.querySelector('[data-role="err"]');
+        if (errEl) {
+          if (d.lastError) {
+            errEl.style.display = "inline-block";
+            errEl.textContent = d.lastError;
+          } else {
+            errEl.style.display = "none";
+          }
+        }
+
+        const logsEl = card.querySelector('[data-role="logs"]');
+        if (logsEl) {
+          const logsText = (d.logs || []).slice(-8).join("\n") || "No logs yet.";
+          if (logsEl.textContent !== logsText) logsEl.textContent = logsText;
+        }
+
+        card.querySelectorAll(".seg button").forEach(b => {
+          b.classList.toggle("active", b.dataset.mode === d.mode);
+        });
+
+        const staticInp = card.querySelector(".static-color");
+        if (staticInp && document.activeElement !== staticInp && staticInp.value.toLowerCase() !== (d.staticColor || "").toLowerCase()) {
+          staticInp.value = d.staticColor;
+        }
+
+        const syncChk = card.querySelector(".dev-sync-bright");
+        if (syncChk && document.activeElement !== syncChk) {
+          syncChk.checked = d.syncBrightness !== false;
+        }
+        const brightInp = card.querySelector(".dev-bright");
+        const brightLbl = card.querySelector(".dev-bright-lbl");
+        const effVal = d.effectiveBrightness ?? 100;
+        if (brightInp && document.activeElement !== brightInp && Number(brightInp.value) !== effVal) {
+          brightInp.value = effVal;
+        }
+        if (brightLbl && document.activeElement !== brightInp) {
+          brightLbl.textContent = effVal + "%";
+        }
+      }
+    }
+
+    function renderDevices(devices) {
+      els.devCount.textContent = `${devices.length} active`;
+      const sig = computeDeviceSig(devices);
+      if (sig !== lastDeviceSig) {
+        lastDeviceSig = sig;
+        buildDevicesDom(devices);
+      } else {
+        patchDevicesDom(devices);
+      }
+    }
+
+    function scheduleNextStatusPoll(delayMs) {
+      clearTimeout(statusPollTimer);
+      statusPollTimer = setTimeout(refreshStatus, delayMs);
+    }
+
+    async function refreshStatus() {
+      if (document.hidden) {
+        scheduleNextStatusPoll(2000);
+        return;
+      }
+      if (statusInFlight) return;
+      statusInFlight = true;
+
+      let nextDelay = 2000;
+      try {
+        const s = await api("/api/status");
+        lastStatus = s;
+
+        els.ramMb.textContent = s.ramMb.toFixed(1);
+        els.cpuPct.textContent = s.cpuPercent.toFixed(1);
+        els.pluginCount.textContent = s.pluginCount;
+
+        els.btnPause.textContent = s.paused ? "Resume" : "Pause";
+        els.btnPause.classList.toggle("active", s.paused);
+        els.btnStartup.textContent = s.startupEnabled
+          ? `Startup: On (${s.startupMode || "On"})`
+          : "Startup: Off";
+        els.btnStartup.classList.toggle("active", s.startupEnabled);
+
+        showScanBanner(s.scan);
+        if (s.scan && s.scan.isScanning) nextDelay = 250;
+
+        if (els.effectName.options.length === 0 && s.availableEffects) {
+          els.effectName.innerHTML = s.availableEffects.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join("");
+        }
+
+        if (document.activeElement !== els.effectName) els.effectName.value = s.effect.effectName;
+        if (document.activeElement !== els.brightness) {
+          els.brightness.value = s.effect.brightness;
+          els.lblBright.textContent = s.effect.brightness + "%";
+        }
+        if (document.activeElement !== els.syncAllBright && s.allBrightnessSynced !== undefined) {
+          els.syncAllBright.checked = Boolean(s.allBrightnessSynced);
+        }
+        if (document.activeElement !== els.speed) {
+          els.speed.value = s.effect.speed;
+          els.lblSpeed.textContent = Number(s.effect.speed).toFixed(1) + "x";
+        }
+        if (document.activeElement !== els.direction) els.direction.value = s.effect.direction;
+        if (document.activeElement !== els.primaryColor) els.primaryColor.value = s.effect.primaryColor;
+        if (document.activeElement !== els.secondaryColor) els.secondaryColor.value = s.effect.secondaryColor;
+        if (document.activeElement !== els.targetFps) {
+          els.targetFps.value = s.targetFps;
+          els.lblFps.textContent = s.targetFps;
+        }
+        if (document.activeElement !== els.skipShutdown) els.skipShutdown.checked = s.skipShutdownBlackout;
+        if (document.activeElement !== els.startupApplyExit && s.startupApplyAndExit !== undefined) {
+          els.startupApplyExit.checked = Boolean(s.startupApplyAndExit);
+        }
+
+        const mobo = s.motherboard ? `${s.motherboard.manufacturer} ${s.motherboard.model}` : "Unknown";
+        const pawn = s.pawnIo && s.pawnIo.installed ? "Installed" : "Not installed";
+        const smbusLine = s.smbusStatus ? `<div><strong>SMBus RAM:</strong> ${escapeHtml(s.smbusStatus)}</div>` : "";
+        const gpuLine = s.adlGpuStatus ? `<div><strong>AMD GPU I2C:</strong> ${escapeHtml(s.adlGpuStatus)}</div>` : "";
+        const nvLine = s.nvGpuStatus ? `<div><strong>NVIDIA GPU I2C:</strong> ${escapeHtml(s.nvGpuStatus)}</div>` : "";
+        const pciHtml = (s.pciDevices || []).map(p => `<div>&bull; [${escapeHtml(p.class)}] ${escapeHtml(p.name)}</div>`).join("");
+        els.sysInfo.innerHTML = `<div><strong>Board:</strong> ${escapeHtml(mobo)}</div><div><strong>PawnIO:</strong> ${escapeHtml(pawn)}</div>${smbusLine}${gpuLine}${nvLine}${pciHtml}`;
+
+        renderDevices(s.devices || []);
+
+        const um = s.unmatchedHid || [];
+        els.unmatched.innerHTML = um.length === 0
+          ? "None"
+          : um.map(u => `<span class="badge">${escapeHtml(u.vendorId)}:${escapeHtml(u.productId)} (${escapeHtml(u.product || "HID")}, ${u.endpointCount} ep)</span>`).join("");
+      } catch (err) {
+        console.error(err);
+      } finally {
+        statusInFlight = false;
+        scheduleNextStatusPoll(nextDelay);
+      }
+    }
+
+    async function refreshCanvas() {
+      if (document.hidden || canvasInFlight) return;
+      canvasInFlight = true;
+      try {
+        const frame = await api("/api/canvas");
+        const bin = atob(frame.rgbBase64);
+        const ctx = els.preview.getContext("2d");
+        const img = ctx.createImageData(frame.width, frame.height);
+        for (let i = 0, p = 0; i < frame.width * frame.height; i++, p += 3) {
+          img.data[i * 4] = bin.charCodeAt(p);
+          img.data[i * 4 + 1] = bin.charCodeAt(p + 1);
+          img.data[i * 4 + 2] = bin.charCodeAt(p + 2);
+          img.data[i * 4 + 3] = 255;
+        }
+        ctx.putImageData(img, 0, 0);
+      } catch {} finally {
+        canvasInFlight = false;
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        refreshStatus();
+        refreshCanvas();
+      }
+    });
+
+    refreshStatus();
+    refreshCanvas();
+    setInterval(refreshCanvas, 250);
+  </script>
+</body>
+</html>

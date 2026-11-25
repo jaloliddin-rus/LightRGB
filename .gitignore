@@ -1,0 +1,16 @@
+# Build outputs
+**/bin/
+**/obj/
+.vs/
+TestResults/
+*.user
+*.suo
+
+# Local user state, extracted plugins, and packaged binaries
+data/
+dist/
+*.lnk
+Install_SignalRgb.exe
+
+# Third-party binary installer (downloaded on build/setup; see THIRD_PARTY_NOTICES.md)
+src/LightRGB/pawnio/PawnIO_setup.exe
